@@ -1,0 +1,112 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <time.h>
+
+struct Department {
+	int *treatTimes;
+	int toTreat;
+	int nTreated;
+	int size;
+	int depNo;
+	const char* input;
+	pthread_mutex_t mu;
+	pthread_cond_t registerSignal;
+};
+struct Department dep, dep2, dep3, dep4, dep5;
+
+
+void initDep(struct Department *d, const char* input, int k) {
+	int num, i;
+	//read numbers from the file
+	d->depNo = k;
+	d->input = input;
+	FILE* file = fopen(d->input, "r");
+	while (!feof(file)) {
+		fscanf(file, "%d", &num);
+		d->size++;
+	}
+	fclose(file);
+	d->treatTimes = (int*) malloc(d->size * sizeof(int));
+	file = fopen(d->input, "r");
+	for (i = 0; i < d->size; i++) {
+		fscanf(file, "%d", &num);
+		d->treatTimes[i] = num;
+	}
+	fclose(file);
+	pthread_mutex_init(&(d->mu), NULL);
+	pthread_cond_init(&(d->registerSignal), NULL);
+
+}
+void* nurse(void *ptr) {
+	int i;
+	for (i = 0; i < size; i++) { //go over the patients and register them
+		pthread_mutex_lock(&mu);
+		printf("Nurse: Patient %d registered  \n", i + 1);
+		toTreat++; //# of patients in waiting room
+		pthread_cond_signal(&registerSignal); //let the doctors know that a new patient has just registered
+		pthread_mutex_unlock(&mu);tmp + 1
+		sleep(2); //registering takes 2 time units
+
+	}
+	pthread_cond_signal(&registerSignal);
+	//printf("Nurse exits\n");
+	pthread_exit(0);
+}
+void* doctor(int dNo) {
+	while (1) {
+		pthread_mutex_lock(&mu);
+		//if all patients are not treated and there are no registered patients,
+		//wait on them to register
+		while (toTreat <= 0 && nTreated < size) {
+			//printf("Doctor %d waits. nTreated %d\n", dNo, nTreated);
+			pthread_cond_wait(&registerSignal, &mu); //waiting on a patient to register
+		}
+		int tmp = nTreated;
+		toTreat--;
+		nTreated++; //a new patient is accepted for treatment
+		pthread_mutex_unlock(&mu);
+
+		if (tmp < size) {
+			sleep(treatTimes[tmp]); //treating patient for pats[tmp] time units
+			pthread_mutex_lock(&mu);
+			printf("Doctor %d: Patient %d treated\n", dNo, tmp + 1);
+			pthread_mutex_unlock(&mu);
+		}
+		if (nTreated >= size) //all patients are treated, break the loop and exit the thread
+			break;
+
+	}
+	//printf("Doctor %d exits. Treated = %d\n", dNo, nTreated);
+	pthread_exit(0);
+}
+*/
+int main() {
+	int k;
+	struct Department hosp[5] = {dep, dep2, dep3, dep4, dep5 };
+	for(k=0; k<5;k++)
+		initDep(&hosp[k],"numbers.txt", k+1);
+	
+
+	//initializing mutex vars&reading data from file
+
+
+	//creating threads
+	//pthread_create(&nurse_t, NULL, nurse, NULL);
+	//pthread_create(&doc1_t, NULL, doctor, 1);
+	//pthread_create(&doc2_t, NULL, doctor, 2);
+
+	//Don't let main to terminate before nurse and doctor threads terminate
+	//pthread_join(doc1_t, NULL);
+	//pthread_join(doc2_t, NULL);
+	//pthread_join(nurse_t, NULL);
+
+	//deallocate mutex&arrays n close output file
+	//pthread_mutex_destroy(&mu);
+	//pthread_cond_destroy(&registerSignal);
+	//free(treatTimes);
+
+	return 0;
+}
+

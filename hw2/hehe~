@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <pthread.h>
+
+#define MAX 4		/* # of item  to nurse_tduce */
+pthread_mutex_t mu;
+pthread_cond_t registerSignal;
+int consumeTimes[MAX] = { 1, 1, 1, 1 };
+int toTreat = 0;
+int nTreated = 0;
+
+void* nurse(void *ptr) {
+	int i;
+	for (i = 0; i < MAX; i++) {
+		pthread_mutex_lock(&mu);
+		printf("Nurse: Patient %d registered  \n", i);
+		toTreat++;
+		pthread_cond_signal(&registerSignal);
+		pthread_mutex_unlock(&mu);
+		sleep(2);
+
+	}
+	pthread_cond_signal(&registerSignal);
+	printf("Nurse exits\n");
+	pthread_exit(0);
+}
+
+void* doctor(int dNo) {
+	while (nTreated < MAX) {
+		pthread_mutex_lock(&mu); /* nurse_ttect buffer */
+		while (toTreat <= 0 && nTreated < MAX) { /* If there is nothing in the buffer then wait */
+			printf("Doctor %d waits\n", dNo);
+			pthread_cond_wait(&registerSignal, &mu);
+		}
+		toTreat--;
+		nTreated++;
+		pthread_mutex_unlock(&mu); /* release the buffer */
+		if (nTreated < MAX) {
+			sleep(consumeTimes[nTreated]); //eger doctor1 öndeyse işi bu patlatıyor
+
+			pthread_mutex_lock(&mu); /* nurse_ttect buffer */
+			printf("Doctor %d: Patient %d treated\n", dNo, nTreated - 1);
+			pthread_mutex_unlock(&mu); /* release the buffer */
+		}
+	}
+
+	printf("Doctor %d exits. Treated = %d\n", dNo, nTreated);
+	pthread_exit(0);
+}
+
+int main(int argc, char **argv) {
+	pthread_t nurse_t, doc1_t, doc2_t;
+
+	// Initialize the mutex and doc1_tdition variables
+	pthread_mutex_init(&mu, NULL);
+	pthread_cond_init(&registerSignal, NULL); /* Initialize doctor doc1_tdition variable */
+
+	// Create the threads
+	pthread_create(&nurse_t, NULL, nurse, NULL);
+	pthread_create(&doc1_t, NULL, doctor, 1);
+	pthread_create(&doc2_t, NULL, doctor, 2);
+
+	// Wait for the threads to finishpthread_doc1_td_destroy
+	// Otherwise main might run to the end
+	// and kill the entire process when it exits.
+	pthread_join(doc1_t, NULL);
+	pthread_join(doc2_t, NULL);
+	pthread_join(nurse_t, NULL);
+
+	// Cleanup -- would happen automatically at end of nurse_tgram
+	pthread_mutex_destroy(&mu); /* Free up mu */
+	pthread_cond_destroy(&registerSignal);
+
+}
+
